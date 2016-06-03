@@ -4,14 +4,24 @@ var fs = require('fs')
   , _ = require('lodash')
   , MaxFlow = require('./max-flow') 
 
+var argv = require('yargs')
+  .usage('Calculates the max flow for a graph represented in a file.\nUsage $0 <input_file>')
+  .demand(1)
+  .number('s')
+  .alias('s', 'start')
+  .describe('s', 'Start node (if not specified, smaller node will be used)')
+  .number('e')
+  .alias('e', 'end')
+  .describe('e', 'End node (if not specified, larger node will be used)')
+  .string('o')
+  .alias('o', 'output')
+  .describe('o', 'Output file (if not specified, output will be printed)')
+  .help('help')
+  .argv
+
 function readFile() {
-  var filePath = process.argv[2]
-
-  if (!filePath) {
-    throw new Error('Please specify the file path as an argument')
-  }
-
-  return fs.readFileSync(filePath, { encoding: 'UTF-8' })
+  var filePath = argv._[0]
+  return fs.readFileSync(filePath, { encoding: 'utf8' })
 }
 
 function mountTuples(str) {
@@ -58,15 +68,15 @@ function getAllNodes(graph) {
 }
 
 function getStartNode(nodes) {
-  return _.min(nodes)
+  return argv.start || argv.s || _.min(nodes)
 }
 
 function getEndNode(nodes) {
-  return _.max(nodes)
+  return argv.end || argv.e || _.max(nodes)
 }
 
-function output(result, endNode) {
-  var lines = [], str
+function mountResultString(result, endNode) {
+  var lines = []
 
   _.forEach(result.graph, (neighbors, node) => {
     _.forEach(neighbors, neighbor => {
@@ -76,9 +86,18 @@ function output(result, endNode) {
 
   lines.push('', 'Final sum = ' + result.finalSum)
 
-  var str = lines.join('\n')
+  return lines.join('\n')
+}
 
-  console.log(str)
+function output(str) {
+  var file = argv.output || argv.o
+
+  if (file) {
+    fs.writeFileSync(file, str)
+    console.log('Output written to ' + file)
+  } else {
+    console.log(str)
+  }
 }
 
 function run() {
@@ -89,8 +108,9 @@ function run() {
   var startNode = getStartNode(allNodes)
   var endNode = getEndNode(allNodes)
   var result = MaxFlow.calculate(graph, startNode, endNode)
+  var resultString = mountResultString(result)
 
-  output(result)
+  output(resultString)
 }
 
 run()
