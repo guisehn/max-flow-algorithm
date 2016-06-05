@@ -10,7 +10,7 @@ function getCandidates(graph, node, path) {
 }
 
 function getMinimumValueFromPath(graph, path) {
-  var values = path.slice(0, -1).map((current, i) => {
+  var values = _.initial(path).map((current, i) => {
     var next = path[i + 1]
     return _.find(graph[current], { node: next }).value
   })
@@ -21,13 +21,12 @@ function getMinimumValueFromPath(graph, path) {
 function adjustValues(graph, path) {
   var minValue = getMinimumValueFromPath(graph, path)
 
-  path.slice(0, -1).forEach((current, i) => {
+  _.initial(path).forEach((current, i) => {
     var next = path[i + 1]
-
     var link1 = _.find(graph[current], { node: next })
-    link1.value -= minValue
-
     var link2 = _.find(graph[next], { node: current })
+
+    link1.value -= minValue
     link2.value += minValue
   })
 }
@@ -47,7 +46,7 @@ function walk(graph, node, endNode, path) {
       return false
     }
 
-    var next = _.maxBy(candidates, x => x.value)
+    var next = _.maxBy(candidates, 'value')
     _.remove(candidates, { node: next.node })
   }
   while (!walk(graph, next.node, endNode, _.clone(path)))
